@@ -20,15 +20,32 @@ const db = new sqlite3.Database('./banco.sqlite', (err) => {
         
         // O serialize cria uma "fila" obrigatória. O Node não vai se apressar!
         db.serialize(() => {
-            // 1. Primeiro cria a tabela
             db.run(`CREATE TABLE IF NOT EXISTS usuarios (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT,
                 email TEXT UNIQUE,
-                senha TEXT
+                senha TEXT,
+                tipo TEXT DEFAULT 'Comum'
             )`);
             
-            // 2. Só DEPOIS de criar a tabela, ele insere o usuário
-            db.run(`INSERT OR IGNORE INTO usuarios (email, senha) VALUES ('teste@fap.com', '123456')`);
+            db.run(`INSERT OR IGNORE INTO usuarios (nome, email, senha, tipo) VALUES ('Usuário Teste', 'teste@fap.com', '123456', 'Comum')`);
+
+            db.run(`CREATE TABLE IF NOT EXISTS estoque (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome_item TEXT,
+                categoria TEXT,
+                quantidade INTEGER,
+                empresa_nome TEXT,
+                data_validade TEXT
+            )`);
+
+            db.run(`CREATE TABLE IF NOT EXISTS pedidos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_item INTEGER,
+                usuario_email TEXT,
+                quantidade_pedida INTEGER,
+                data_pedido TEXT
+            )`);
         });
     }
 });
@@ -55,6 +72,109 @@ app.post('/login', (req, res) => {
                 <a href="javascript:history.back()">Voltar e tentar novamente</a>
             `);
         }
+    });
+});
+
+// Rota de Cadastro
+app.post('/cadastrar', (req, res) => {
+    const { nome, email, senha, tipo } = req.body;
+
+    const sql = `INSERT INTO usuarios (nome, email, senha, tipo) VALUES (?, ?, ?, ?)`;
+
+    db.run(sql, [nome, email, senha, tipo], function(err) {
+        if (err) {
+            if (err.message.includes('UNIQUE constraint failed')) {
+                return res.status(409).send(`
+                    <h1>Este e-mail já está cadastrado.</h1>
+                    <a href="javascript:history.back()">Voltar e tentar novamente</a>
+                `);
+            }
+            return res.status(500).send("Erro interno do servidor.");
+        }
+        res.redirect('/index.html');
+    });
+});
+
+// Rota para adicionar item ao estoque
+app.post('/adicionar-estoque', (req, res) => {
+    const { nome_item, categoria, quantidade, empresa_nome, data_validade } = req.body;
+
+    const sql = `INSERT INTO estoque (nome_item, categoria, quantidade, empresa_nome, data_validade) VALUES (?, ?, ?, ?, ?)`;
+
+    db.run(sql, [nome_item, categoria, parseInt(quantidade), empresa_nome, data_validade || null], function(err) {
+        if (err) {
+            return res.status(500).send("Erro ao adicionar item ao estoque.");
+        }
+        res.redirect('/src/pages/estoque.html');
+    });
+});
+
+// API para consultar estoque em JSON
+app.get('/api/estoque', (req, res) => {
+    const sql = `SELECT * FROM estoque`;
+
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ erro: "Erro ao consultar estoque." });
+        }
+        res.json(rows);
+    });
+});
+
+// API Dashboard: dados agregados para analytics
+app.get('/api/dashboard', (req, res) => {
+    const sqlPorCategoria = `SELECT categoria, SUM(quantidade) as total FROM estoque GROUP BY categoria ORDER BY total DESC`;
+    const sqlRanking = `SELECT empresa_nome, SUM(quantidade) as total_doado FROM estoque GROUP BY empresa_nome ORDER BY total_doado DESC`;
+
+    db.all(sqlPorCategoria, [], (err, categorias) => {
+        if (err) {
+            return res.status(500).json({ erro: "Erro ao consultar dashboard." });
+        }
+        db.all(sqlRanking, [], (err, ranking) => {
+            if (err) {
+                return res.status(500).json({ erro: "Erro ao consultar dashboard." });
+            }
+            res.json({ categorias, ranking });
+        });
+    });
+});
+
+// Rota para pedir um item do estoque (baixa automática)
+app.post('/pedir-item', (req, res) => {
+    const { id_item, quantidade_pedida, usuario_email } = req.body;
+    const qtd = parseInt(quantidade_pedida);
+
+    if (!id_item || !qtd || qtd <= 0) {
+        return res.status(400).json({ sucesso: false, mensagem: "Dados inválidos." });
+    }
+
+    db.get(`SELECT * FROM estoque WHERE id = ?`, [id_item], (err, item) => {
+        if (err) {
+            return res.status(500).json({ sucesso: false, mensagem: "Erro interno." });
+        }
+        if (!item) {
+            return res.status(404).json({ sucesso: false, mensagem: "Item não encontrado." });
+        }
+        if (item.quantidade < qtd) {
+            return res.status(400).json({ sucesso: false, mensagem: `Estoque insuficiente. Disponível: ${item.quantidade}` });
+        }
+
+        const dataPedido = new Date().toISOString().split('T')[0];
+        const sqlPedido = `INSERT INTO pedidos (id_item, usuario_email, quantidade_pedida, data_pedido) VALUES (?, ?, ?, ?)`;
+        const sqlBaixa = `UPDATE estoque SET quantidade = quantidade - ? WHERE id = ?`;
+
+        db.run(sqlPedido, [id_item, usuario_email || 'anonimo@test.com', qtd, dataPedido], function(err) {
+            if (err) {
+                return res.status(500).json({ sucesso: false, mensagem: "Erro ao registrar pedido." });
+            }
+            db.run(sqlBaixa, [qtd, id_item], function(err) {
+                if (err) {
+                    return res.status(500).json({ sucesso: false, mensagem: "Erro ao dar baixa no estoque." });
+                }
+                const novaQtd = item.quantidade - qtd;
+                res.json({ sucesso: true, mensagem: `Pedido realizado! ${qtd}x "${item.nome_item}" retirado(s). Estoque restante: ${novaQtd}` });
+            });
+        });
     });
 });
 

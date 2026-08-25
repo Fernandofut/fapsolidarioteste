@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAP Solidário - Estoque de Doações</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px 20px; }
+        .container { max-width: 1060px; margin: 0 auto; background: #fff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); padding: 40px; }
+        .titulo { font-size: 1.8rem; font-weight: 800; color: #333; text-align: center; margin-bottom: 8px; }
+        .subtitulo { color: #888; font-size: 0.9rem; text-align: center; margin-bottom: 30px; }
+        .nav-links { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
+        .nav-links a { padding: 8px 18px; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 600; color: #667eea; border: 2px solid #667eea; transition: all 0.2s; }
+        .nav-links a:hover, .nav-links a.ativo { background: #667eea; color: #fff; }
+        .secao-form { background: #f7f8fc; border-radius: 12px; padding: 25px; margin-bottom: 35px; border: 1px solid #e8eaf0; }
+        .secao-form h2 { font-size: 1.1rem; color: #444; margin-bottom: 18px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .campo label { display: block; font-size: 0.8rem; font-weight: 600; color: #555; margin-bottom: 5px; }
+        .campo input, .campo select { width: 100%; padding: 11px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.95rem; outline: none; transition: border-color 0.3s; }
+        .campo input:focus, .campo select:focus { border-color: #667eea; }
+        .btn-add { grid-column: 1 / -1; padding: 12px; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: transform 0.2s, opacity 0.2s; margin-top: 5px; }
+        .btn-add:hover { transform: translateY(-2px); opacity: 0.92; }
+        .tabela { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .tabela thead { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; }
+        .tabela th { padding: 12px; text-align: left; font-weight: 600; }
+        .tabela td { padding: 10px 12px; border-bottom: 1px solid #eee; color: #444; }
+        .tabela tbody tr:hover { background: #f7f8fc; }
+        .tabela .vazio { text-align: center; color: #aaa; padding: 25px; font-style: italic; }
+        .tabela tbody tr.vencendo { background: #fff5f5 !important; border-left: 4px solid #e74c3c; }
+        .tabela tbody tr.vencido { background: #fdd !important; border-left: 4px solid #c0392b; opacity: 0.7; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; color: #fff; }
+        .cat-alimentos { background: #43e97b; } .cat-roupas { background: #4facfe; } .cat-higiene { background: #f093fb; }
+        .cat-moveis { background: #fccb90; color: #555; } .cat-dinheiro { background: #2ecc71; } .cat-outros { background: #aab; }
+        .v-ok { color: #27ae60; font-weight: 600; } .v-alerta { color: #e67e22; font-weight: 700; }
+        .v-critico { color: #e74c3c; font-weight: 700; } .v-vencido { color: #c0392b; font-weight: 700; text-decoration: line-through; }
+        .btn-pedir { padding: 5px 12px; background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; border: none; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: transform 0.2s; }
+        .btn-pedir:hover { transform: translateY(-1px); opacity: 0.9; }
+        .btn-pedir:disabled { background: #ccc; cursor: not-allowed; }
+        .resumo { display: flex; gap: 15px; margin-bottom: 30px; }
+        .card-resumo { flex: 1; background: #f7f8fc; border-radius: 10px; padding: 15px; text-align: center; border: 1px solid #e8eaf0; }
+        .card-resumo .numero { font-size: 1.6rem; font-weight: 800; color: #667eea; }
+        .card-resumo .label { font-size: 0.75rem; color: #888; margin-top: 3px; }
+        .link-voltar { display: block; text-align: center; margin-top: 25px; color: #667eea; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+        .link-voltar:hover { text-decoration: underline; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-overlay.ativo { display: flex; }
+        .modal-box { background: #fff; border-radius: 12px; padding: 30px; max-width: 400px; width: 90%; text-align: center; }
+        .modal-box h3 { margin-bottom: 15px; color: #333; }
+        .modal-box .campo { text-align: left; margin-bottom: 15px; }
+        .modal-box .campo label { display: block; font-size: 0.8rem; font-weight: 600; color: #555; margin-bottom: 5px; }
+        .modal-box .campo input { width: 100%; padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.95rem; outline: none; }
+        .modal-botoes { display: flex; gap: 10px; justify-content: center; }
+        .modal-botoes button { padding: 10px 22px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem; }
+        .btn-confirmar { background: linear-gradient(135deg, #43e97b, #38f9d7); color: #fff; }
+        .btn-cancelar { background: #eee; color: #555; }
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 14px 28px; border-radius: 10px; color: #fff; font-weight: 600; font-size: 0.9rem; z-index: 2000; transition: transform 0.4s ease; max-width: 90%; text-align: center; }
+        .toast.sucesso { background: #27ae60; } .toast.erro { background: #e74c3c; }
+        .toast.mostrar { transform: translateX(-50%) translateY(0); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="titulo">ESTOQUE DE DOACOES</h1>
+        <p class="subtitulo">Gerencie, valide e distribua itens com controle de validade (FIFO)</p>
+
+        <div class="nav-links">
+            <a href="/src/pages/opcoes.html">Menu</a>
+            <a href="/src/pages/estoque.html" class="ativo">Estoque</a>
+            <a href="/src/pages/dashboard.html">Dashboard</a>
+        </div>
+
+        <div class="resumo">
+            <div class="card-resumo"><div class="numero" id="total-itens">0</div><div class="label">Itens</div></div>
+            <div class="card-resumo"><div class="numero" id="total-quantidade">0</div><div class="label">Qtd Total</div></div>
+            <div class="card-resumo"><div class="numero" id="total-empresas">0</div><div class="label">Empresas</div></div>
+            <div class="card-resumo"><div class="numero" id="total-vencendo" style="color:#e67e22">0</div><div class="label">Vencendo (7d)</div></div>
+        </div>
+
+        <div class="secao-form">
+            <h2>Registrar Nova Doacao no Estoque</h2>
+            <form action="/adicionar-estoque" method="POST">
+                <div class="form-grid">
+                    <div class="campo"><label>Nome do Item</label><input type="text" name="nome_item" placeholder="Ex: Cesta Basica" required></div>
+                    <div class="campo"><label>Categoria</label>
+                        <select name="categoria" required>
+                            <option value="">Selecione...</option>
+                            <option value="Alimentos">Alimentos</option>
+                            <option value="Roupas">Roupas</option>
+                            <option value="Higiene">Higiene</option>
+                            <option value="Moveis">Moveis</option>
+                            <option value="Dinheiro">Dinheiro</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                    <div class="campo"><label>Quantidade</label><input type="number" name="quantidade" min="1" placeholder="0" required></div>
+                    <div class="campo"><label>Nome da Empresa / Doador</label><input type="text" name="empresa_nome" placeholder="Ex: Empresa XYZ" required></div>
+                    <div class="campo"><label>Data de Validade</label><input type="date" name="data_validade"></div>
+                    <div class="campo"><label>&nbsp;</label><button type="submit" class="btn-add">ADICIONAR AO ESTOQUE</button></div>
+                </div>
+            </form>
+        </div>
+
+        <div class="secao-form">
+            <h2>Itens Disponiveis</h2>
+            <table class="tabela">
+                <thead>
+                    <tr><th>ID</th><th>Item</th><th>Categoria</th><th>Qtd</th><th>Empresa</th><th>Validade</th><th>Acao</th></tr>
+                </thead>
+                <tbody id="corpo-tabela">
+                    <tr class="vazio"><td colspan="7">Nenhum item cadastrado ainda.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <a href="/src/pages/opcoes.html" class="link-voltar">Voltar ao Menu</a>
+    </div>
+
+    <div class="modal-overlay" id="modal-pedido">
+        <div class="modal-box">
+            <h3>Pedir Item</h3>
+            <p id="modal-item-nome" style="color:#888;margin-bottom:10px"></p>
+            <div class="campo"><label>Quantidade desejada</label><input type="number" id="modal-qtd" min="1" value="1"></div>
+            <div class="campo"><label>Seu e-mail</label><input type="email" id="modal-email" placeholder="seu@email.com"></div>
+            <div class="modal-botoes">
+                <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+                <button class="btn-confirmar" onclick="confirmarPedido()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let itemIdAlvo = null;
+
+        function getCategoriaClass(cat) {
+            const c = (cat || '').toLowerCase();
+            if (c.includes('alimento')) return 'cat-alimentos';
+            if (c.includes('roupa')) return 'cat-roupas';
+            if (c.includes('higiene')) return 'cat-higiene';
+            if (c.includes('moveis') || c.includes('móvel')) return 'cat-moveis';
+            if (c.includes('dinheiro')) return 'cat-dinheiro';
+            return 'cat-outros';
+        }
+
+        function getValidadeInfo(dataStr) {
+            if (!dataStr) return { texto: 'Sem validade', classe: '' };
+            const hoje = new Date();
+            hoje.setHours(0,0,0,0);
+            const val = new Date(dataStr + 'T00:00:00');
+            const diff = Math.ceil((val - hoje) / (1000 * 60 * 60 * 24));
+            if (diff < 0) return { texto: dataStr + ' (VENCIDO)', classe: 'v-vencido' };
+            if (diff === 0) return { texto: dataStr + ' (HOJE)', classe: 'v-critico' };
+            if (diff <= 7) return { texto: dataStr + ' (' + diff + 'd)', classe: 'v-alerta' };
+            return { texto: dataStr, classe: 'v-ok' };
+        }
+
+        function getLinhaClass(dataStr) {
+            if (!dataStr) return '';
+            const hoje = new Date(); hoje.setHours(0,0,0,0);
+            const val = new Date(dataStr + 'T00:00:00');
+            const diff = Math.ceil((val - hoje) / (1000 * 60 * 60 * 24));
+            if (diff < 0) return 'vencido';
+            if (diff <= 7) return 'vencendo';
+            return '';
+        }
+
+        function showToast(msg, tipo) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast ' + tipo + ' mostrar';
+            setTimeout(() => { t.className = 'toast'; }, 3500);
+        }
+
+        function abrirModal(id, nome) {
+            itemIdAlvo = id;
+            document.getElementById('modal-item-nome').textContent = 'Item: ' + nome;
+            document.getElementById('modal-qtd').value = 1;
+            document.getElementById('modal-qtd').max = '';
+            document.getElementById('modal-pedido').classList.add('ativo');
+        }
+
+        function fecharModal() {
+            document.getElementById('modal-pedido').classList.remove('ativo');
+            itemIdAlvo = null;
+        }
+
+        function confirmarPedido() {
+            const qtd = parseInt(document.getElementById('modal-qtd').value);
+            const email = document.getElementById('modal-email').value || 'anonimo@test.com';
+            if (!itemIdAlvo || !qtd || qtd <= 0) { showToast('Quantidade invalida.', 'erro'); return; }
+
+            fetch('/pedir-item', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_item: itemIdAlvo, quantidade_pedida: qtd, usuario_email: email })
+            })
+            .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
+            .then(({ ok, data }) => {
+                if (ok) { showToast(data.mensagem, 'sucesso'); carregarEstoque(); }
+                else { showToast(data.mensagem || 'Erro ao pedir.', 'erro'); }
+                fecharModal();
+            })
+            .catch(() => { showToast('Erro de conexao.', 'erro'); fecharModal(); });
+        }
+
+        function carregarEstoque() {
+            fetch('/api/estoque')
+                .then(r => r.json())
+                .then(dados => {
+                    const corpo = document.getElementById('corpo-tabela');
+                    if (dados.length === 0) {
+                        corpo.innerHTML = '<tr class="vazio"><td colspan="7">Nenhum item cadastrado ainda.</td></tr>';
+                        document.getElementById('total-itens').textContent = '0';
+                        document.getElementById('total-quantidade').textContent = '0';
+                        document.getElementById('total-empresas').textContent = '0';
+                        document.getElementById('total-vencendo').textContent = '0';
+                        return;
+                    }
+                    let html = '', somaQtd = 0, vencendo = 0;
+                    const empresas = new Set();
+                    dados.forEach(item => {
+                        somaQtd += item.quantidade;
+                        empresas.add(item.empresa_nome);
+                        const vi = getValidadeInfo(item.data_validade);
+                        const linhaCls = getLinhaClass(item.data_validade);
+                        if (linhaCls === 'vencendo') vencendo++;
+                        html += '<tr class="' + linhaCls + '">'
+                            + '<td>' + item.id + '</td>'
+                            + '<td>' + item.nome_item + '</td>'
+                            + '<td><span class="badge ' + getCategoriaClass(item.categoria) + '">' + item.categoria + '</span></td>'
+                            + '<td>' + item.quantidade + '</td>'
+                            + '<td>' + item.empresa_nome + '</td>'
+                            + '<td class="' + vi.classe + '">' + vi.texto + '</td>'
+                            + '<td><button class="btn-pedir" onclick="abrirModal(' + item.id + ',\'' + item.nome_item.replace(/'/g,"\\'") + '\')" ' + (item.quantidade <= 0 ? 'disabled' : '') + '>Pedir</button></td>'
+                            + '</tr>';
+                    });
+                    corpo.innerHTML = html;
+                    document.getElementById('total-itens').textContent = dados.length;
+                    document.getElementById('total-quantidade').textContent = somaQtd;
+                    document.getElementById('total-empresas').textContent = empresas.size;
+                    document.getElementById('total-vencendo').textContent = vencendo;
+                })
+                .catch(() => {
+                    document.getElementById('corpo-tabela').innerHTML = '<tr class="vazio"><td colspan="7">Erro ao carregar estoque.</td></tr>';
+                });
+        }
+
+        carregarEstoque();
+    </script>
+</body>
+</html>

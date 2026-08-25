@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAP Solidário - Dashboard Analítico</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: #fff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); padding: 40px; }
+        .titulo { font-size: 1.8rem; font-weight: 800; color: #333; text-align: center; margin-bottom: 8px; }
+        .subtitulo { color: #888; font-size: 0.9rem; text-align: center; margin-bottom: 30px; }
+        .nav-links { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
+        .nav-links a { padding: 8px 18px; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 600; color: #667eea; border: 2px solid #667eea; transition: all 0.2s; }
+        .nav-links a:hover, .nav-links a.ativo { background: #667eea; color: #fff; }
+        .grid-dash { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 30px; }
+        .painel { background: #f7f8fc; border-radius: 12px; padding: 25px; border: 1px solid #e8eaf0; }
+        .painel h2 { font-size: 1rem; color: #444; margin-bottom: 15px; text-align: center; }
+        .chart-box { position: relative; width: 100%; max-height: 300px; display: flex; justify-content: center; }
+        .ranking-lista { list-style: none; }
+        .ranking-lista li { display: flex; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee; font-size: 0.9rem; color: #444; transition: background 0.2s; }
+        .ranking-lista li:hover { background: #f0f0ff; }
+        .ranking-lista li:last-child { border-bottom: none; }
+        .ranking-pos { font-size: 1.3rem; margin-right: 12px; min-width: 35px; text-align: center; }
+        .ranking-nome { flex: 1; font-weight: 600; }
+        .ranking-qtd { font-weight: 700; color: #667eea; }
+        .resumo { display: flex; gap: 15px; margin-bottom: 30px; }
+        .card-resumo { flex: 1; background: #f7f8fc; border-radius: 10px; padding: 15px; text-align: center; border: 1px solid #e8eaf0; }
+        .card-resumo .numero { font-size: 1.6rem; font-weight: 800; color: #667eea; }
+        .card-resumo .label { font-size: 0.75rem; color: #888; margin-top: 3px; }
+        .vazio-msg { text-align: center; color: #aaa; font-style: italic; padding: 30px; }
+        .link-voltar { display: block; text-align: center; margin-top: 25px; color: #667eea; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+        .link-voltar:hover { text-decoration: underline; }
+        @media (max-width: 700px) { .grid-dash { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="titulo">DASHBOARD ANALITICO</h1>
+        <p class="subtitulo">Visualizacao em tempo real do estoque de doacoes</p>
+
+        <div class="nav-links">
+            <a href="/src/pages/opcoes.html">Menu</a>
+            <a href="/src/pages/estoque.html">Estoque</a>
+            <a href="/src/pages/dashboard.html" class="ativo">Dashboard</a>
+        </div>
+
+        <div class="resumo">
+            <div class="card-resumo"><div class="numero" id="dash-total">0</div><div class="label">Total de Itens</div></div>
+            <div class="card-resumo"><div class="numero" id="dash-qtd">0</div><div class="label">Quantidade Total</div></div>
+            <div class="card-resumo"><div class="numero" id="dash-cats">0</div><div class="label">Categorias</div></div>
+            <div class="card-resumo"><div class="numero" id="dash-emp">0</div><div class="label">Empresas</div></div>
+        </div>
+
+        <div class="grid-dash">
+            <div class="painel">
+                <h2>Doacoes por Categoria</h2>
+                <div class="chart-box">
+                    <canvas id="chartCategorias"></canvas>
+                </div>
+                <p id="vazio-cats" class="vazio-msg" style="display:none">Sem dados para exibir.</p>
+            </div>
+            <div class="painel">
+                <h2>Ranking de Empresas Solidarias</h2>
+                <ul class="ranking-lista" id="ranking-lista">
+                    <li class="vazio-msg">Nenhuma empresa registrada.</li>
+                </ul>
+            </div>
+        </div>
+
+        <a href="/src/pages/opcoes.html" class="link-voltar">Voltar ao Menu</a>
+    </div>
+
+    <script>
+        const cores = ['#667eea','#764ba2','#43e97b','#f093fb','#fccb90','#4facfe','#f5576c','#43e97b','#38f9d7','#e74c3c'];
+        const selos = ['&#x1F947;','&#x1F948;','&#x1F949;'];
+        let chartInstance = null;
+
+        function carregarDashboard() {
+            fetch('/api/dashboard')
+                .then(r => r.json())
+                .then(dados => {
+                    const cats = dados.categorias || [];
+                    const ranking = dados.ranking || [];
+
+                    let totalQtd = 0;
+                    cats.forEach(c => totalQtd += c.total);
+
+                    document.getElementById('dash-total').textContent = cats.reduce((s, c) => { const items = c.total; return s; }, 0) || 0;
+                    document.getElementById('dash-qtd').textContent = totalQtd;
+                    document.getElementById('dash-cats').textContent = cats.length;
+                    document.getElementById('dash-emp').textContent = ranking.length;
+
+                    const totalItens = cats.reduce((s, c) => s + c.total, 0);
+                    document.getElementById('dash-total').textContent = totalItens;
+
+                    if (cats.length === 0) {
+                        document.getElementById('chartCategorias').style.display = 'none';
+                        document.getElementById('vazio-cats').style.display = 'block';
+                    } else {
+                        document.getElementById('chartCategorias').style.display = 'block';
+                        document.getElementById('vazio-cats').style.display = 'none';
+                        renderizarPizza(cats);
+                    }
+
+                    renderizarRanking(ranking);
+                })
+                .catch(() => {
+                    document.getElementById('vazio-cats').style.display = 'block';
+                });
+        }
+
+        function renderizarPizza(cats) {
+            const labels = cats.map(c => c.categoria);
+            const valores = cats.map(c => c.total);
+            const coresChart = cats.map((_, i) => cores[i % cores.length]);
+
+            if (chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(document.getElementById('chartCategorias'), {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: valores,
+                        backgroundColor: coresChart,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 15, font: { size: 12 } } }
+                    }
+                }
+            });
+        }
+
+        function renderizarRanking(ranking) {
+            const lista = document.getElementById('ranking-lista');
+            if (ranking.length === 0) {
+                lista.innerHTML = '<li class="vazio-msg">Nenhuma empresa registrada.</li>';
+                return;
+            }
+            let html = '';
+            ranking.forEach((emp, i) => {
+                const selo = i < 3 ? selos[i] : '<span style="color:#aaa">#' + (i + 1) + '</span>';
+                const bg = i === 0 ? '#fff9e6' : i === 1 ? '#f5f5f5' : i === 2 ? '#fdf0e6' : '';
+                html += '<li style="background:' + bg + '">'
+                    + '<span class="ranking-pos">' + selo + '</span>'
+                    + '<span class="ranking-nome">' + emp.empresa_nome + '</span>'
+                    + '<span class="ranking-qtd">' + emp.total_doado + ' un.</span>'
+                    + '</li>';
+            });
+            lista.innerHTML = html;
+        }
+
+        carregarDashboard();
+    </script>
+</body>
+</html>

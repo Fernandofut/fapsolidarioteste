@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAP Solidário - Login</title>
+    <title>FAP Solidário - Cadastro</title>
     <style>
-        /* === Reset básico === */
         * {
             margin: 0;
             padding: 0;
@@ -22,30 +21,20 @@
             padding: 20px;
         }
 
-        /* === Cartão do formulário === */
-        .container-login {
+        .container-cadastro {
             background: #ffffff;
             border-radius: 16px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             padding: 45px 40px;
             width: 100%;
-            max-width: 420px;
+            max-width: 480px;
             text-align: center;
         }
 
-        .logo-login {
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-bottom: 18px;
-            border: 3px solid #667eea;
-        }
-
-        .titulo-login {
-            font-size: 2.1rem;
+        .titulo-cadastro {
+            font-size: 1.8rem;
             font-weight: 800;
-            letter-spacing: 1px;
+            color: #333;
             margin-bottom: 6px;
         }
 
@@ -65,7 +54,6 @@
             margin-bottom: 30px;
         }
 
-        /* === Campos do formulário === */
         .campo {
             text-align: left;
             margin-bottom: 18px;
@@ -79,7 +67,8 @@
             margin-bottom: 6px;
         }
 
-        .campo input {
+        .campo input,
+        .campo select {
             width: 100%;
             padding: 13px 15px;
             border: 2px solid #e0e0e0;
@@ -87,17 +76,18 @@
             font-size: 1rem;
             transition: border-color 0.3s;
             outline: none;
+            background: #fff;
         }
 
-        .campo input:focus {
+        .campo input:focus,
+        .campo select:focus {
             border-color: #667eea;
         }
 
-        /* === Botão de envio === */
-        .btn-entrar {
+        .btn-cadastrar {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
             color: #fff;
             border: none;
             border-radius: 10px;
@@ -108,36 +98,43 @@
             margin-top: 8px;
         }
 
-        .btn-entrar:hover {
+        .btn-cadastrar:hover {
             transform: translateY(-2px);
             opacity: 0.92;
         }
 
-        .creditos {
+        .link-login {
             margin-top: 22px;
-            font-size: 0.8rem;
-            color: #aaa;
+            font-size: 0.85rem;
+            color: #888;
         }
 
-        .creditos strong {
+        .link-login a {
             color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .link-login a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
 
-    <!-- Formulário de login enviado via POST para a rota /login do servidor -->
-    <main class="container-login">
-        <img src="src/pages/css/assets/fap.jpeg" alt="FAP Solidário Logo" class="logo-login">
-
-        <h1 class="titulo-login">
+    <main class="container-cadastro">
+        <h1 class="titulo-cadastro">
             <span class="letra-f">F</span><span class="letra-a">A</span><span class="letra-p">P</span>
             <span class="letra-s">S</span><span class="letra-o">O</span><span class="letra-l">L</span><span class="letra-i">I</span><span class="letra-d">D</span><span class="letra-a">Á</span><span class="letra-r">R</span><span class="letra-i">I</span><span class="letra-o">O</span>
         </h1>
-        <p class="subtitulo">Entre para acessar o sistema de doações</p>
+        <p class="subtitulo">Crie sua conta para doar ou receber</p>
 
-        <!-- O atributo action aponta para a rota POST /login do back-end -->
-        <form action="/login" method="POST">
+        <form action="/cadastrar" method="POST">
+            <div class="campo">
+                <label for="nome">Nome</label>
+                <input type="text" id="nome" name="nome" placeholder="Seu nome completo" required>
+            </div>
+
             <div class="campo">
                 <label for="email">E-mail</label>
                 <input type="email" id="email" name="email" placeholder="seu@email.com" required>
@@ -145,17 +142,21 @@
 
             <div class="campo">
                 <label for="senha">Senha</label>
-                <input type="password" id="senha" name="senha" placeholder="Sua senha" required>
+                <input type="password" id="senha" name="senha" placeholder="Crie uma senha" required>
             </div>
 
-            <button type="submit" class="btn-entrar">ENTRAR</button>
+            <div class="campo">
+                <label for="tipo">Tipo de Conta</label>
+                <select id="tipo" name="tipo" required>
+                    <option value="Comum">Doador Comum</option>
+                    <option value="Empresa">Empresa</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-cadastrar">CADASTRAR</button>
         </form>
 
-        <p class="creditos">Usuário de teste: <strong>teste@fap.com</strong> / <strong>123456</strong></p>
-
-        <p style="margin-top: 16px; font-size: 0.85rem; color: #888;">
-            Ainda não tem conta? <a href="/src/pages/cadastro.html" style="color: #667eea; text-decoration: none; font-weight: 600;">Cadastre-se aqui</a>
-        </p>
+        <p class="link-login">Já tem uma conta? <a href="/index.html">Faça login aqui</a></p>
     </main>
 
 </body>
