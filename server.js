@@ -79,6 +79,10 @@ app.post('/login', (req, res) => {
 app.post('/cadastrar', (req, res) => {
     const { nome, email, senha, tipo } = req.body;
 
+    if (!nome || !email || !senha) {
+        return res.status(400).send(`<h1>Preencha todos os campos obrigatórios.</h1><a href="javascript:history.back()">Voltar</a>`);
+    }
+
     const sql = `INSERT INTO usuarios (nome, email, senha, tipo) VALUES (?, ?, ?, ?)`;
 
     db.run(sql, [nome, email, senha, tipo], function(err) {
@@ -98,6 +102,10 @@ app.post('/cadastrar', (req, res) => {
 // Rota para adicionar item ao estoque
 app.post('/adicionar-estoque', (req, res) => {
     const { nome_item, categoria, quantidade, empresa_nome, data_validade } = req.body;
+
+    if (!nome_item || !categoria || !quantidade || !empresa_nome) {
+        return res.status(400).send(`<h1>Preencha todos os campos obrigatórios.</h1><a href="javascript:history.back()">Voltar</a>`);
+    }
 
     const sql = `INSERT INTO estoque (nome_item, categoria, quantidade, empresa_nome, data_validade) VALUES (?, ?, ?, ?, ?)`;
 
@@ -139,7 +147,7 @@ app.get('/api/dashboard', (req, res) => {
     });
 });
 
-// Rota para pedir um item do estoque (baixa automática)
+// Rota para pedir um item do estoque (baixa automática com transaction)
 app.post('/pedir-item', (req, res) => {
     const { id_item, quantidade_pedida, usuario_email } = req.body;
     const qtd = parseInt(quantidade_pedida);
@@ -161,18 +169,20 @@ app.post('/pedir-item', (req, res) => {
 
         const dataPedido = new Date().toISOString().split('T')[0];
         const sqlPedido = `INSERT INTO pedidos (id_item, usuario_email, quantidade_pedida, data_pedido) VALUES (?, ?, ?, ?)`;
-        const sqlBaixa = `UPDATE estoque SET quantidade = quantidade - ? WHERE id = ?`;
+        const sqlBaixa = `UPDATE estoque SET quantidade = quantidade - ? WHERE id = ? AND quantidade >= ?`;
 
-        db.run(sqlPedido, [id_item, usuario_email || 'anonimo@test.com', qtd, dataPedido], function(err) {
-            if (err) {
-                return res.status(500).json({ sucesso: false, mensagem: "Erro ao registrar pedido." });
-            }
-            db.run(sqlBaixa, [qtd, id_item], function(err) {
+        db.serialize(() => {
+            db.run(sqlPedido, [id_item, usuario_email || 'anonimo@test.com', qtd, dataPedido], function(err) {
                 if (err) {
-                    return res.status(500).json({ sucesso: false, mensagem: "Erro ao dar baixa no estoque." });
+                    return res.status(500).json({ sucesso: false, mensagem: "Erro ao registrar pedido." });
                 }
-                const novaQtd = item.quantidade - qtd;
-                res.json({ sucesso: true, mensagem: `Pedido realizado! ${qtd}x "${item.nome_item}" retirado(s). Estoque restante: ${novaQtd}` });
+                db.run(sqlBaixa, [qtd, id_item, qtd], function(err) {
+                    if (err || this.changes === 0) {
+                        return res.status(500).json({ sucesso: false, mensagem: "Erro ao dar baixa no estoque." });
+                    }
+                    const novaQtd = item.quantidade - qtd;
+                    res.json({ sucesso: true, mensagem: `Pedido realizado! ${qtd}x "${item.nome_item}" retirado(s). Estoque restante: ${novaQtd}` });
+                });
             });
         });
     });

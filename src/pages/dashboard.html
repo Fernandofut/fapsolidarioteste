@@ -79,7 +79,10 @@
 
         function carregarDashboard() {
             fetch('/api/dashboard')
-                .then(r => r.json())
+                .then(r => {
+                    if (!r.ok) throw new Error('Erro HTTP ' + r.status);
+                    return r.json();
+                })
                 .then(dados => {
                     const cats = dados.categorias || [];
                     const ranking = dados.ranking || [];
@@ -87,13 +90,10 @@
                     let totalQtd = 0;
                     cats.forEach(c => totalQtd += c.total);
 
-                    document.getElementById('dash-total').textContent = cats.reduce((s, c) => { const items = c.total; return s; }, 0) || 0;
+                    document.getElementById('dash-total').textContent = totalQtd;
                     document.getElementById('dash-qtd').textContent = totalQtd;
                     document.getElementById('dash-cats').textContent = cats.length;
                     document.getElementById('dash-emp').textContent = ranking.length;
-
-                    const totalItens = cats.reduce((s, c) => s + c.total, 0);
-                    document.getElementById('dash-total').textContent = totalItens;
 
                     if (cats.length === 0) {
                         document.getElementById('chartCategorias').style.display = 'none';
@@ -107,7 +107,10 @@
                     renderizarRanking(ranking);
                 })
                 .catch(() => {
+                    document.getElementById('chartCategorias').style.display = 'none';
                     document.getElementById('vazio-cats').style.display = 'block';
+                    document.getElementById('vazio-cats').textContent = 'Erro ao carregar dados do dashboard.';
+                    document.getElementById('ranking-lista').innerHTML = '<li class="vazio-msg">Erro ao carregar ranking.</li>';
                 });
         }
 
