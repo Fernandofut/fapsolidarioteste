@@ -3,37 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAP Solidário - Início</title>
-    <link rel="stylesheet" href="style_home.css">
+    <title>FAP Solidário - Login</title>
+    <style>
+        /* === Reset básico === */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        /* === Cartão do formulário === */
+        .container-login {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 45px 40px;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+        }
+
+        .logo-login {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 18px;
+            border: 3px solid #667eea;
+        }
+
+        .titulo-login {
+            font-size: 2.1rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .letra-f { color: #667eea; }
+        .letra-a { color: #764ba2; }
+        .letra-p { color: #f093fb; }
+        .letra-s { color: #6a11cb; }
+        .letra-o { color: #f5576c; }
+        .letra-l { color: #4facfe; }
+        .letra-i { color: #43e97b; }
+        .letra-d { color: #fa709a; }
+        .letra-r { color: #fccb90; }
+
+        .subtitulo {
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+        }
+
+        /* === Campos do formulário === */
+        .campo {
+            text-align: left;
+            margin-bottom: 18px;
+        }
+
+        .campo label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 6px;
+        }
+
+        .campo input {
+            width: 100%;
+            padding: 13px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+            outline: none;
+        }
+
+        .campo input:focus {
+            border-color: #667eea;
+        }
+
+        /* === Botão de envio === */
+        .btn-entrar {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            margin-top: 8px;
+        }
+
+        .btn-entrar:hover {
+            transform: translateY(-2px);
+            opacity: 0.92;
+        }
+
+        .creditos {
+            margin-top: 22px;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .creditos strong {
+            color: #667eea;
+        }
+    </style>
 </head>
 <body>
 
-    <div class="main-container">
-        <section class="lado-esquerdo">
-            <div class="logo-container">
-                <img src="fap.jpeg" alt="FAP Solidário Logo" class="logo-img">
-            </div>
-        </section>
+    <!-- Formulário de login enviado via POST para a rota /login do servidor -->
+    <main class="container-login">
+        <img src="src/pages/css/assets/fap.jpeg" alt="FAP Solidário Logo" class="logo-login">
 
-        <section class="lado-direito">
-            <div class="menu-botoes">
-                
-                <h1 class="titulo-fap">
-                    <span class="letra-f">F</span><span class="letra-a">A</span><span class="letra-p">P</span>
-                    <br>
-                    <span class="letra-s">S</span><span class="letra-o">O</span><span class="letra-l">L</span><span class="letra-i">I</span><span class="letra-d">D</span><span class="letra-a">Á</span><span class="letra-r">R</span><span class="letra-i">I</span><span class="letra-o">O</span>
-                </h1>
+        <h1 class="titulo-login">
+            <span class="letra-f">F</span><span class="letra-a">A</span><span class="letra-p">P</span>
+            <span class="letra-s">S</span><span class="letra-o">O</span><span class="letra-l">L</span><span class="letra-i">I</span><span class="letra-d">D</span><span class="letra-a">Á</span><span class="letra-r">R</span><span class="letra-i">I</span><span class="letra-o">O</span>
+        </h1>
+        <p class="subtitulo">Entre para acessar o sistema de doações</p>
 
-                <a href="doar.html" class="btn-gradiente">FAZER DOAÇÕES</a>
-                
-                <a href="receberdoacao.html" class="btn-gradiente">RECEBER DOAÇÕES</a>
-                
-                <hr class="divisor">
-                
-                <a href="informaçoes.html" class="btn-gradiente">MAIS INFORMAÇÕES</a>
+        <!-- O atributo action aponta para a rota POST /login do back-end -->
+        <form action="/login" method="POST">
+            <div class="campo">
+                <label for="email">E-mail</label>
+                <input type="email" id="email" name="email" placeholder="seu@email.com" required>
             </div>
-        </section>
-    </div>
+
+            <div class="campo">
+                <label for="senha">Senha</label>
+                <input type="password" id="senha" name="senha" placeholder="Sua senha" required>
+            </div>
+
+            <button type="submit" class="btn-entrar">ENTRAR</button>
+        </form>
+
+        <p class="creditos">Usuário de teste: <strong>teste@fap.com</strong> / <strong>123456</strong></p>
+    </main>
 
 </body>
 </html>

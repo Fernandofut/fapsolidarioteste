@@ -1,0 +1,25 @@
+{
+  "name": "fapsolidario",
+  "version": "1.0.0",
+  "description": "> 🎓 Projeto desenvolvido para a disciplina de **Projeto e Desenvolvimento de Sistemas**.",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Fernandofut/fapsolidario.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Fernandofut/fapsolidario/issues"
+  },
+  "homepage": "https://github.com/Fernandofut/fapsolidario#readme",
+  "dependencies": {
+    "express": "^5.2.1",
+    "sqlite3": "^6.0.1"
+  }
+}

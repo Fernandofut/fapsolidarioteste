@@ -1,0 +1,5 @@
+# Dependências
+node_modules/
+
+# Banco de dados local
+banco.sqlite
